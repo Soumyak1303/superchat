@@ -45,11 +45,12 @@ function SignIn() {
   return <button onClick={signInWithGoogle}>Sign in with Google</button>;
 }
 
-function SignOut() {
-  return (
-    auth.currentUser && <button onClick={() => auth.signOut()}>Sign out</button>
-  );
-}
+//TODO integrate signout-->
+// function SignOut() {
+//   return (
+//     auth.currentUser && <button onClick={() => auth.signOut()}>Sign out</button>
+//   );
+// }
 
 function ChatRoom() {
   //creating reference to message collection in firebase db
@@ -96,7 +97,7 @@ function ChatMessage(props) {
   const messageClasses = uid === auth.currentUser.uid ? "sent" : "received";
   return (
     <div className={`message ${messageClasses}`}>
-      <img src={photoURL} />
+      <img src={photoURL} alt="user" />
       <p>{text}</p>
     </div>
   );
