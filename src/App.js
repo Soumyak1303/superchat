@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 //firebase sdk: connecting to auth and firestore services
 // import firebase from 'firebase/app';
@@ -31,7 +31,10 @@ function App() {
   const [user] = useAuthState(auth);
   return (
     <div className="App">
-      <header className="App-header">Superchat</header>
+      <header className="App-header">
+        <h2>superchat</h2>
+        {user && <SignOut />}
+      </header>
       <section>{user ? <ChatRoom /> : <SignIn />}</section>
     </div>
   );
@@ -45,12 +48,11 @@ function SignIn() {
   return <button onClick={signInWithGoogle}>Sign in with Google</button>;
 }
 
-//TODO integrate signout-->
-// function SignOut() {
-//   return (
-//     auth.currentUser && <button onClick={() => auth.signOut()}>Sign out</button>
-//   );
-// }
+function SignOut() {
+  return (
+    auth.currentUser && <button onClick={() => auth.signOut()}>Sign out</button>
+  );
+}
 
 function ChatRoom() {
   //creating reference to message collection in firebase db
@@ -59,25 +61,39 @@ function ChatRoom() {
   const [message] = useCollectionData(query, { idField: "id" });
   const [formValue, setFormValue] = useState("");
   const dummy = useRef();
+
+  //on every message update set scroll
+  useEffect(() => {
+    dummy.current.scrollIntoView({ behavior: "smooth" });
+  }, [message]);
+
   const sendMessage = async (e) => {
     e.preventDefault();
     const { uid, photoURL } = auth.currentUser;
-
+    setFormValue("");
     await messageRef.add({
       text: formValue,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       uid,
       photoURL,
     });
-
-    setFormValue("");
-    dummy.current.scrollIntoView({ behavior: "smooth" });
   };
+ // console.log(message); TODO fix rerenders
   return (
     <>
       <main>
         {message &&
-          message.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
+          message.map((msg, index) => {
+            return (
+              <ChatMessage
+                key={msg.id}
+                message={msg}
+                shouldDisplayImg={
+                  index === 0 || !(message[index - 1].uid === msg.uid)
+                }
+              />
+            );
+          })}
         <div ref={dummy}></div>
       </main>
       <form onSubmit={sendMessage}>
@@ -93,11 +109,14 @@ function ChatRoom() {
 }
 
 function ChatMessage(props) {
-  const { text, uid, photoURL } = props.message;
+  const {
+    message: { text, uid, photoURL },
+    shouldDisplayImg,
+  } = props;
   const messageClasses = uid === auth.currentUser.uid ? "sent" : "received";
   return (
     <div className={`message ${messageClasses}`}>
-      <img src={photoURL} alt="user" />
+      {shouldDisplayImg && <img src={photoURL} alt="user" />}
       <p>{text}</p>
     </div>
   );
